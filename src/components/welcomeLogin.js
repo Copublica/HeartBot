@@ -124,7 +124,7 @@ const WelcomeLogin = () => {
         <div className="google-login">
           <div className="line"></div>
 
-          <GoogleOAuthProvider clientId="338976857027-7eaird3188j265pb2vf0ltmt7m53o01c.apps.googleusercontent.com">
+          <GoogleOAuthProvider clientId="338976857027-gq4dq4k9rp20cdukhinchc6nec48gt4m.apps.googleusercontent.com">
                 <GoogleLogin
                   onSuccess={handleGoogleLoginSuccess}
                   onError={() => {
