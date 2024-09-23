@@ -213,7 +213,7 @@ export const CustomButton = () => {
   contentStyle={{ 
     width: '100%',  // Full width but controlled with Bootstrap classes
     maxWidth: '350px',  // Limit maximum width
-    height: '250px',  // Auto height for content adaptability
+    height: 'auto',  // Auto height for content adaptability
     padding: '1rem',  // Bootstrap padding in rem
     borderRadius: '10px', 
     textAlign: 'center',
