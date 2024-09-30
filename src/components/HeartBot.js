@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import loadingSpiner from "./spinner.json";
 
 import Lottie from "lottie-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Animation123 from "./greycolor.json";
 import Animation12 from "./BarAanimation.json";
 
@@ -132,6 +132,7 @@ const HeartBot = () => {
     const [isFormCompleted, setIsFormCompleted] = useState(true); // Tracks form completion
     const [UserAttachmentStyleDb, setUserAttachmentStyleDb] = useState(null);
     const messagesRef = useRef([]);
+    const navigate = useNavigate();
     let newWord = "";
     let audioQueue = [];
     let textQueue = [];
@@ -672,6 +673,7 @@ const HeartBot = () => {
                 const prompt2 = `You are an AI support agent developed by Copublica, designed to provide emotional and mental health support for individuals navigating heartbreak challenges. When a user submits a query labeled as ⁠${newWord}⁠, analyze it and suggest three relevant, concise follow-up questions (max 60 characters each) that the user might want to ask. These questions must be phrased from the user's perspective, using "I" or "me" format, not "you" format (e.g., What activities should I do to feel better? instead of What activities help you feel better?). Base these questions solely on the information in ${prompt1}. They should help the user explore or clarify aspects of their ${newWord}. For greeting queries, respond only with "No answer". Ensure your suggestions are focused, relevant, and helpful in guiding the user through their inquiry, always maintaining a first-person perspective in the questions. Question must we start with auto numbering like 1.;`;
 
                 console.log("Run Submit= " + (initialMessage || newWord));
+                
 
                  
 
@@ -999,6 +1001,36 @@ const HeartBot = () => {
         }
     }, [btnText]);
 
+
+    function deleteAllCookies() {
+        const cookies = document.cookie.split(";");
+    
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i];
+          const eqPos = cookie.indexOf("=");
+          const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+          document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        }
+      }
+    
+      const handleLogoutAndStopMic = () => {
+        // Stop the microphone
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current = null;
+        }
+    
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop());
+            streamRef.current = null;
+            setStream(null);
+        }
+    
+        // Logout logic
+        deleteAllCookies();
+        navigate('/LoginPage');
+    };
+
     return (
         <div className="display">
             <div className="container voice-ui"
@@ -1010,11 +1042,7 @@ const HeartBot = () => {
                 <div className="d-flex">
                     <div className="milaNav" style={{ zIndex: "99" }}>
                         <div className="navbar-4">
-                            <Link to="/MainPage" onClick={stopMic}>
-                                <button className="back-button" type="button">
-                                    <i className="fas fa-angle-left"></i>
-                                </button>
-                            </Link>
+                        <button className="logout-button btn btn-dark ms-auto" onClick={handleLogoutAndStopMic}>Logout</button>
                         </div>
                     </div>
                 </div>
