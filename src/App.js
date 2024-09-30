@@ -22,9 +22,9 @@ import ForgotPassword from './components/ForgotPassword';
 import PrivateRoute from './PrivateRoute';
 import MaintenancePage from './components/MaintenancePage';
 
-
-import HeartBot3 from './components/HeartBot';
 import HeartBot from './components/HeartBot';
+import BugReport from './components/BugReport';
+import ErrorPage from './components/ErrorPage';
 
 // import HeartBot4 from './components/HeartBot4';npm
 
@@ -51,10 +51,14 @@ function App() {
 
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/maintenance" element={<MaintenancePage />} />
+      <Route path="/errorpage" element={<ErrorPage />} />
 
       <Route path='*' element={<MaintenancePage/>}></Route>
 
       <Route path='HeartBot' element={<HeartBot/>}></Route>
+          <Route path='Bug' element={<BugReport />}></Route>
+         
+    
 
     </Routes>
 </BrowserRouter>

@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import BeatLoader from "react-spinners/BeatLoader";
 import './Register.css';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function SignUp() {
   const [formData, setFormData] = useState({
@@ -14,6 +16,7 @@ function SignUp() {
   const [userId, setUserId] = useState(null);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [showOtpInput, setShowOtpInput] = useState(false);
+  const [showOtpPopup, setShowOtpPopup] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [timer, setTimer] = useState(60);
@@ -53,17 +56,37 @@ function SignUp() {
   };
 
   const handleOtpChange = (element, index) => {
-    if (/^\d*$/.test(element.value)) {
+    const value = element.value;
+
+    if (/^\d*$/.test(value)) {
       let newOtp = [...otp];
-      newOtp[index] = element.value;
+      newOtp[index] = value;
       setOtp(newOtp);
 
-      // Automatically move to the next input box if a digit is entered
-      if (element.value && index < 5) {
+      // Move to next input box when a digit is entered
+      if (value && index < 5) {
         document.getElementById(`otp${index + 1}`).focus();
       }
     }
   };
+
+  const handleKeyDown = (e, index) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      document.getElementById(`otp${index - 1}`).focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    const pasteData = e.clipboardData.getData("text").trim();
+    if (/^\d{6}$/.test(pasteData)) {
+      const otpArray = pasteData.split("");
+      setOtp(otpArray);
+
+      const lastIndex = otpArray.findIndex((digit, idx) => idx === 5);
+      document.getElementById("otp5").focus(); // Focus on the last box
+    }
+  };
+
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -83,36 +106,46 @@ function SignUp() {
     const { username, email, password, confirmPassword } = formData;
 
     if (!validateEmail(email)) {
-      alert("Please enter a valid email address.");
+      toast.error("Please enter a valid email address....");
       return;
     }
 
     if (password.length < 8) {
-      alert("Password must be at least 8 characters long.");
+      toast.error("Password must be at least 8 characters long.");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match.");
+      toast.error("Passwords Mismatch..");
       return;
     }
 
     setLoading(true);
 
     try {
-      //const response = await axios.post("https://35.193.141.150:5005/register", { username, email, password });
-      const response = await axios.post("https://localhost:5000/register", { username, email, password });
-      console.log(response.data);
+      const response = await axios.post("https://backend.supermilla.com/register", { username, email, password });
       setUserId(response.data.userId);
       setShowOtpInput(true); // Show OTP input field
+      setShowOtpPopup(true); // Show OTP popup
       setTimer(60); // Reset timer
       setIsResendDisabled(true); // Disable resend button
       setLoading(false);
       setNotification("OTP has been sent to your email.");
+      toast.success("OTP has been sent to your email.");
     } catch (error) {
-      console.error('There was an error!', error);
       setLoading(false);
+
+    if (error.response && error.response.status === 400) {
+      if (error.response.data.error === 'User already exists with this email address.') {
+        toast.error("User already exists with this email.");
+        setNotification("User already exists with this email.");
+      } else {
+        toast.error("Validation error: " + error.response.data.error);
+      }
+    } else {
+      toast.error("Failed to send OTP. Please try again.");
       setNotification("Failed to send OTP. Please try again.");
+    }
     }
   };
 
@@ -121,13 +154,14 @@ function SignUp() {
     const enteredOtp = otp.join(""); 
 
     try {
-       const response = await axios.post("https://35.193.141.150:5005/register/verify-otp", { userId, otp: enteredOtp });
-      //const response = await axios.post("https://localhost:5000/register/verify-otp", { userId, otp: enteredOtp });
-      console.log(response.data);
-      navigate("/LoginPage"); 
+      const response = await axios.post("https://backend.supermilla.com/register/verify-otp", { userId, otp: enteredOtp });
+      toast.success("Registration successful! Please login.");
+      setTimeout(() => {
+        navigate("/LoginPage");
+      }, 1500);
     } catch (error) {
       console.error('There was an error!', error);
-      alert('Invalid OTP');
+      toast.error("Invalid OTP.");
     }
   };
 
@@ -135,24 +169,24 @@ function SignUp() {
     setLoading(true);
 
     try {
-      const response = await axios.post("https://35.193.141.150:5005/register/resend-otp", { userId });
-      //const response = await axios.post("http://localhost:5000/register/resend-otp", { userId });
-      console.log(response.data);
-      console.log(response.data);
+      const response = await axios.post("https://backend.supermilla.com/register/resend-otp", { userId });
       setTimer(60); // Reset timer
       setIsResendDisabled(true); // Disable resend button
       setLoading(false);
       setNotification("OTP has been resent to your email.");
+      toast.success("OTP has been resent to your email.");
     } catch (error) {
       console.error('There was an error!', error);
       setLoading(false);
       setNotification("Failed to resend OTP. Please try again.");
+      toast.error("Failed to resend OTP. Please try again.");
     }
   };
 
   return (
     <>
       <div className="container text-center px-4" id="loginpage">
+        <ToastContainer position="top-center" autoClose={1000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
         <div className='d-flex'>
           <div className="milaNav" style={{ zIndex: '99' }}>
             <div className="navbar-4">
@@ -191,19 +225,11 @@ function SignUp() {
               <i className={showConfirmPassword ? "fa-solid fa-eye" : "fa-regular fa-eye-slash"} onClick={toggleConfirmPasswordVisibility} style={{ position: 'absolute', right: '10px', top: '10px', cursor: 'pointer' }}></i>
             </div>
 
-            {/* <div className="form-group">
-              <div className="checkbox">
-                <label className="label-title px-3 py-2">
-                  <input type="checkbox" required/> By checking the box you agree to our <span className="text-danger">Terms</span> and <span className="text-danger">Conditions</span>
-                </label>
-              </div>
-            </div> */}
-
             <div className="form-check mb-3">
-            <input type="checkbox" className="form-check-input register-check-box" id="terms" checked={termsChecked} onChange={handleTermsChange} required />
-            <label className="form-check-label-register" htmlFor="terms">
-              By checking the box you agree to our <a href="#" onClick={handlePopupToggle}><span className='text-red'>Terms</span> and <span className='text-red'>Conditions</span></a>
-            </label>
+              <input type="checkbox" className="form-check-input register-check-box" id="terms" checked={termsChecked} onChange={handleTermsChange} required />
+              <label className="form-check-label-register" htmlFor="terms">
+                By checking the box you agree to our <a href="#" onClick={handlePopupToggle}><span className='text-red'>Terms</span> and <span className='text-red'>Conditions</span></a>
+              </label>
             </div>
 
             <div className="form-group">
@@ -224,7 +250,9 @@ function SignUp() {
                   id={`otp${index}`}
                   value={data}
                   onChange={(e) => handleOtpChange(e.target, index)}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
                   maxLength="1"
+                  onPaste={handlePaste} // Handle paste event
                 />
               ))}
             </div>
@@ -307,18 +335,58 @@ function SignUp() {
               <p>We reserve the right to update this Privacy Policy at any time to reflect changes to our practices or for legal, regulatory, or operational reasons. We will notify active registered users of any changes by email.</p>
               <h4>Contact Information</h4>
               <p>For any inquiries or concerns related to this Privacy Policy, please email <a href="mailto:voicebot@copublica.dk">voicebot@copublica.dk</a>.</p>
-            </div>
             
+            </div>
             <div className="popup-actions container">
               <div className="form-check">
                 <input type="checkbox" className="form-check-input" id="popupTerms" checked={termsChecked} onChange={handleTermsChange} />
                 <label className="form-check-label" htmlFor="popupTerms">I agree to the terms and conditions</label>
               </div>
-              <button onClick={handlePopupToggle} className="btn accept-button mt-3 rounded-5">Close</button>
+              <button onClick={handlePopupToggle} className="accpet-button close-button mt-3 rounded-5">Close</button>
+            </div>
             </div>
           </div>
-          </div>
       )}
+
+      {showOtpPopup && ( // Show OTP pop-up when true
+          <div className="otp-popup">
+            <div className="otp-popup-content">
+              <h2>OTP Verification</h2>
+              <p>Enter the 6-digit OTP sent to your email:</p>
+              <form className="otp-form" onSubmit={handleOtpSubmit}>
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    id={`otp${index}`}
+                    type="text"
+                    maxLength="1"
+                    value={digit}
+                    onChange={(e) => handleOtpChange(e.target, index)}
+                    onKeyDown={(e) => handleKeyDown(e, index)} 
+                    onPaste={handlePaste} // Handle paste event
+                  />
+                ))}
+                <button type="submit" className="verify-button rounded-5 mt-3">
+                  Verify
+                </button>
+              </form>
+
+              <div className="resend-otp mt-3">
+                <p>
+                  Didn't receive the OTP?{" "}
+                  <button
+                    className="btn btn-link"
+                    onClick={handleResendOtp}
+                    disabled={isResendDisabled}
+                  >
+                    Resend OTP {isResendDisabled && `in ${timer}s`}
+                  </button>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
     </>
   );
 }
